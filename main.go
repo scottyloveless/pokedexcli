@@ -38,10 +38,20 @@ type cliCommand struct {
 	callback    func() error
 }
 
+type config struct {
+	Next     string `json:"next"`
+	Previous any    `json:"previous"`
+}
+
 var supportedCommands map[string]cliCommand
 
 func init() {
 	supportedCommands = map[string]cliCommand{
+		"map": {
+			name:        "map",
+			description: "Displays a list of maps",
+			callback:    fetchMap,
+		},
 		"help": {
 			name:        "help",
 			description: "Displays a help message",
@@ -67,7 +77,10 @@ func commandHelp() error {
 	fmt.Println(" ")
 	for _, cmd := range supportedCommands {
 		fmt.Printf("%v: %v\n", cmd.name, cmd.description)
-
 	}
+	return nil
+}
+
+func fetchMap() error {
 	return nil
 }
