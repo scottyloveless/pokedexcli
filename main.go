@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/scottyloveless/pokedexcli/internal"
 )
 
 func main() {
@@ -15,7 +17,7 @@ func main() {
 		scanner.Scan()
 		words := cleanInput(scanner.Text())
 		if value, exists := supportedCommands[words[0]]; exists {
-			err := value.callback()
+			err := value.callback(internal.ApiConfig)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -35,12 +37,7 @@ func cleanInput(text string) []string {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func() error
-}
-
-type config struct {
-	Next     string `json:"next"`
-	Previous any    `json:"previous"`
+	callback    func(internal.Config) error
 }
 
 var supportedCommands map[string]cliCommand
@@ -49,9 +46,15 @@ func init() {
 	supportedCommands = map[string]cliCommand{
 		"map": {
 			name:        "map",
-			description: "Displays a list of maps",
-			callback:    fetchMap,
+			description: "Displays a list of next 20 maps",
+			callback:    mapForward,
 		},
+		"mapb": {
+			name:        "mapb",
+			description: "Displays a list of previous 20 maps",
+			callback:    mapBack,
+		},
+
 		"help": {
 			name:        "help",
 			description: "Displays a help message",
@@ -65,13 +68,13 @@ func init() {
 	}
 }
 
-func commandExit() error {
+func commandExit(config internal.Config) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp() error {
+func commandHelp(config internal.Config) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	fmt.Println(" ")
@@ -81,6 +84,30 @@ func commandHelp() error {
 	return nil
 }
 
-func fetchMap() error {
+func mapForward(config internal.Config) error {
+	pmap, err := internal.ApiLocationFetch(config.Next)
+	if err != nil {
+		return err
+	}
+
+	for _, m := range pmap.Results {
+		fmt.Printf("%v\n", m.Name)
+	}
+	return nil
+}
+
+func mapBack(config internal.Config) error {
+	if config.Previous == nil {
+		fmt.Println("you're on the first page")
+		return nil
+	}
+	pmap, err := internal.ApiLocationFetch(config.Previous)
+	if err != nil {
+		return err
+	}
+
+	for _, m := range pmap.Results {
+		fmt.Printf("%v\n", m.Name)
+	}
 	return nil
 }
