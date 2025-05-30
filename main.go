@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/scottyloveless/pokedexcli/internal"
 )
 
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
+	go internal.NewCache(time.Second * 90)
 	for {
-
 		fmt.Print("Pokedex > ")
 		scanner.Scan()
 		words := cleanInput(scanner.Text())

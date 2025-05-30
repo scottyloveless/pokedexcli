@@ -24,29 +24,38 @@ type Config struct {
 
 var ApiConfig Config
 
-func ApiLocationFetch(conf *string) (PokeMap, error) {
+func ApiLocationFetch(config *string) (PokeMap, error) {
 	baseUrl := ""
+	var data PokeMap
 
-	if conf == nil {
+	if config == nil {
 		baseUrl = "https://pokeapi.co/api/v2/location-area/"
 	} else {
-		baseUrl = *conf
+		baseUrl = *config
 	}
 
-	res, err := http.Get(baseUrl)
-	if err != nil {
-		return PokeMap{}, fmt.Errorf("error getting locations: %v", err)
-	}
-	defer res.Body.Close()
+	v, b := cache.Get(baseUrl)
 
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return PokeMap{}, fmt.Errorf("error reading body: %v", err)
-	}
+	if b {
+		if err := json.Unmarshal(v, &data); err != nil {
+			return PokeMap{}, fmt.Errorf("could not unmarshal json from cache: %v", err)
+		}
+	} else {
+		res, err := http.Get(baseUrl)
+		if err != nil {
+			return PokeMap{}, fmt.Errorf("error getting locations: %v", err)
+		}
+		defer res.Body.Close()
 
-	var data PokeMap
-	if err := json.Unmarshal([]byte(body), &data); err != nil {
-		return PokeMap{}, fmt.Errorf("could not unmarshal json: %v", err)
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			return PokeMap{}, fmt.Errorf("error reading body: %v", err)
+		}
+
+		if err := json.Unmarshal([]byte(body), &data); err != nil {
+			return PokeMap{}, fmt.Errorf("could not unmarshal json: %v", err)
+		}
+		cache.Add(baseUrl, body)
 	}
 
 	ApiConfig.Next = data.Next
