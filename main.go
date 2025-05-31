@@ -106,6 +106,11 @@ func init() {
 			description: "View details of caught Pokemon",
 			callback:    inspect,
 		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "List pokemon in pokedex",
+			callback:    pokedex,
+		},
 	}
 }
 
@@ -203,7 +208,10 @@ func rollChance(percentage float64) bool {
 }
 
 func inspect(config internal.Config, str string) error {
+	internal.GlobalPokedex.Mutex.Lock()
 	v, exists := internal.GlobalPokedex.Inventory[str]
+	internal.GlobalPokedex.Mutex.Unlock()
+
 	if !exists {
 		fmt.Println("you have not caught that pokemon")
 	} else {
@@ -218,6 +226,14 @@ func inspect(config internal.Config, str string) error {
 		for _, t := range v.Types {
 			fmt.Printf(" - %v\n", t.Type.Name)
 		}
+	}
+	return nil
+}
+
+func pokedex(config internal.Config, str string) error {
+	fmt.Println("Your Pokedex:")
+	for key := range internal.GlobalPokedex.Inventory {
+		fmt.Printf(" - %v\n", key)
 	}
 	return nil
 }
